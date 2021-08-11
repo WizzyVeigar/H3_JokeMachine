@@ -15,14 +15,16 @@ namespace H3_JokeMachine.Controllers
         [HttpGet]
         public IActionResult GetJoke()
         {
+            FilterUsedJokes();
+
             return Ok(GetRandomJoke(jokeList.Jokes));
         }
 
         [HttpGet]
         [Route("Type/{type}")]
-
         public IActionResult GetJoke(JokeType type)
         {
+            FilterUsedJokes();
             for (int i = 0; i < jokeList.Jokes.Count; i++)
             {
                 if (jokeList.Jokes[i].Type != type)
@@ -30,8 +32,6 @@ namespace H3_JokeMachine.Controllers
                     jokeList.Jokes.RemoveAt(i);
                 }
             }
-
-
             return Ok(GetRandomJoke(jokeList.Jokes));
         }
 
@@ -50,16 +50,12 @@ namespace H3_JokeMachine.Controllers
         /// Used to take out already used jokes from the session
         /// </summary>
         /// <returns></returns>
-        private List<Joke> FilterUsedJokes()
+        private void FilterUsedJokes()
         {
             List<Joke> usedJokes = HttpContext.Session.GetObjectFromJson<List<Joke>>("jokes");
 
             if (usedJokes.Count > 0)
-            {
                 GetUnusedJokes(usedJokes);
-            }
-
-            return jokeList.Jokes;
         }
 
         private List<Joke> GetUnusedJokes(List<Joke> usedJokes)
