@@ -1,4 +1,5 @@
 ﻿using H3_JokeMachine.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,6 @@ namespace H3_JokeMachine.Controllers
         {
             try
             {
-                //Check if session is tainted
                 FilterUsedJokes();
             }
             catch (Exception)
@@ -26,12 +26,19 @@ namespace H3_JokeMachine.Controllers
                 return BadRequest("Session has been tampered with");
             }
 
-            return Ok(GetRandomJoke(jokeList.Jokes).JokeText);
+            
+            if (HttpContext.Request.Cookies["Favorite_Joke"] != null)
+            {
+                GetJoke("", "");
+            }
+
+            return SendJoke();
         }
+
 
         [HttpGet]
         [Route("Type/{type}/{language?}")]
-        public IActionResult GetJoke(string type, [FromHeader]string language)
+        public IActionResult GetJoke(string type, [FromHeader] string language)
         {
             JokeType jokeType;
             Language? languageType = null;
@@ -81,7 +88,12 @@ namespace H3_JokeMachine.Controllers
                 }
             }
 
-            List<Joke> usedJokes = GetUsedJokes();
+            return SendJoke(true);
+        }
+
+        private IActionResult SendJoke(bool setCookie = false)
+        {
+            List<Joke> usedJokes = GetJokeListFromSession();
             if (usedJokes == null)
                 usedJokes = new List<Joke>();
 
@@ -92,13 +104,18 @@ namespace H3_JokeMachine.Controllers
                 usedJokes.Add(returnJoke);
                 //Save the list back into session
                 HttpContext.Session.SetObjectAsJson("jokes", usedJokes);
+                if (setCookie)
+                {
+                    HttpContext.Response.Cookies.Append("Favorite_Joke",
+                        returnJoke.Type.ToString(),
+                        new CookieOptions() { MaxAge = TimeSpan.FromMinutes(10) });
+                }
                 //return Ok(returnJoke);
                 return Ok(returnJoke.JokeText);
             }
             else
                 return Ok("No jokes left!");
         }
-
 
         [HttpGet]
         [Route("Types")]
@@ -133,7 +150,7 @@ namespace H3_JokeMachine.Controllers
         {
             try
             {
-                List<Joke> usedJokes = GetUsedJokes();
+                List<Joke> usedJokes = GetJokeListFromSession();
                 if (usedJokes != null)
                     if (usedJokes.Count > 0)
                     {
@@ -150,7 +167,7 @@ namespace H3_JokeMachine.Controllers
             }
         }
 
-        private List<Joke> GetUsedJokes()
+        private List<Joke> GetJokeListFromSession()
         {
             return HttpContext.Session.GetObjectFromJson<List<Joke>>("jokes");
         }

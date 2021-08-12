@@ -3,6 +3,17 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to funneh</h1>
+    <h3 class="display-3">Choose a category:</h3>
+
+    <button onclick="ShowAllJokes()">Show all Categories</button>
+    <button onclick="GetDadJoke()">Dad Jokes</button>
+    <button onclick="GetProgrammerJoke()">Programmer Jokes</button>
+    <button onclick="GetAnimalJoke()">Animal Jokes</button>
+
+    <p id="jokeText">Hello world</p>
 </div>
+
+
+<script src="~/js/jokefetcher.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
