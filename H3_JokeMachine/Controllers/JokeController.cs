@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace H3_JokeMachine.Controllers
 {
+    [Route("[controller]")]
     public class JokeController : Controller
     {
         private JokeList jokeList = new JokeList();
@@ -15,24 +16,102 @@ namespace H3_JokeMachine.Controllers
         [HttpGet]
         public IActionResult GetJoke()
         {
-            FilterUsedJokes();
+            try
+            {
+                //Check if session is tainted
+                FilterUsedJokes();
+            }
+            catch (Exception)
+            {
+                return BadRequest("Session has been tampered with");
+            }
 
-            return Ok(GetRandomJoke(jokeList.Jokes));
+            return Ok(GetRandomJoke(jokeList.Jokes).JokeText);
         }
 
         [HttpGet]
-        [Route("Type/{type}")]
-        public IActionResult GetJoke(JokeType type)
+        [Route("Type/{type}/{language?}")]
+        public IActionResult GetJoke(string type, [FromHeader]string language)
         {
-            FilterUsedJokes();
-            for (int i = 0; i < jokeList.Jokes.Count; i++)
+            JokeType jokeType;
+            Language? languageType = null;
+
+            //Sanitize parameters
+            try
             {
-                if (jokeList.Jokes[i].Type != type)
+                jokeType = (JokeType)Enum.Parse(typeof(JokeType),
+                    type.First().ToString().ToUpper() + type.Substring(1));
+                if (language != "" && language != null)
+                    languageType = (Language)Enum.Parse(typeof(Language),
+                        language.First().ToString().ToUpper() + language.Substring(1));
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest("Bad parameters, check if everything is spelled correctly");
+            }
+
+            try
+            {
+                //Check if session is tainted
+                FilterUsedJokes();
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Session has been tampered with\n" + e);
+            }
+
+            //Remove all jokes not requested by type
+            for (int i = jokeList.Jokes.Count - 1; i >= 0; i--)
+            {
+                if (jokeList.Jokes[i].Type != jokeType)
                 {
                     jokeList.Jokes.RemoveAt(i);
                 }
             }
-            return Ok(GetRandomJoke(jokeList.Jokes));
+
+            //If language is picked, remove all jokes not requested by language
+            if (languageType != null)
+            {
+                for (int i = jokeList.Jokes.Count - 1; i >= 0; i--)
+                {
+                    if (jokeList.Jokes[i].Language != languageType)
+                    {
+                        jokeList.Jokes.RemoveAt(i);
+                    }
+                }
+            }
+
+            List<Joke> usedJokes = GetUsedJokes();
+            if (usedJokes == null)
+                usedJokes = new List<Joke>();
+
+            //Joke to return
+            if (jokeList.Jokes.Count > 0)
+            {
+                Joke returnJoke = GetRandomJoke(jokeList.Jokes);
+                usedJokes.Add(returnJoke);
+                //Save the list back into session
+                HttpContext.Session.SetObjectAsJson("jokes", usedJokes);
+                //return Ok(returnJoke);
+                return Ok(returnJoke.JokeText);
+            }
+            else
+                return Ok("No jokes left!");
+        }
+
+
+        [HttpGet]
+        [Route("Types")]
+        public string GetJokeTypes()
+        {
+            string jokeTypes = "";
+
+            foreach (string jokeName in Enum.GetNames(typeof(JokeType)))
+            {
+                jokeTypes += jokeName + "\n";
+            }
+
+            return jokeTypes;
         }
 
 
@@ -52,10 +131,28 @@ namespace H3_JokeMachine.Controllers
         /// <returns></returns>
         private void FilterUsedJokes()
         {
-            List<Joke> usedJokes = HttpContext.Session.GetObjectFromJson<List<Joke>>("jokes");
+            try
+            {
+                List<Joke> usedJokes = GetUsedJokes();
+                if (usedJokes != null)
+                    if (usedJokes.Count > 0)
+                    {
+                        GetUnusedJokes(usedJokes);
+                    }
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (FormatException)
+            {
+                throw;
+            }
+        }
 
-            if (usedJokes.Count > 0)
-                GetUnusedJokes(usedJokes);
+        private List<Joke> GetUsedJokes()
+        {
+            return HttpContext.Session.GetObjectFromJson<List<Joke>>("jokes");
         }
 
         private List<Joke> GetUnusedJokes(List<Joke> usedJokes)
@@ -64,7 +161,7 @@ namespace H3_JokeMachine.Controllers
             {
                 for (int j = 0; j < jokeList.Jokes.Count; j++)
                 {
-                    if (usedJokes[j].JokeId == jokeList.Jokes[j].JokeId)
+                    if (usedJokes[i].JokeId == jokeList.Jokes[j].JokeId)
                     {
                         jokeList.Jokes.RemoveAt(j);
                         j = jokeList.Jokes.Count + 1;
