@@ -23,5 +23,12 @@ namespace H3_JokeMachine
             new Joke("What do you call a penguin in the desert? Lost",JokeType.Animal,Language.English,11),
             new Joke("What is the best way to cook a gator? In a crock-pot",JokeType.Animal,Language.English,12),
         };
+
+        public List<Joke> SecretJokes = new List<Joke>()
+        {
+            new Joke("What did the buffalo say to his son when he left for college? Bison", JokeType.Animal, Language.English, 1),
+            new Joke("What do you call a dog magician? A Labracadabrador", JokeType.Animal, Language.English, 2),
+            new Joke("What do you get from a pampered cow? Spoiled milk", JokeType.Animal, Language.English, 3)
+        };
     }
 }

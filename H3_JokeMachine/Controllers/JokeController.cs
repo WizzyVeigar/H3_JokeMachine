@@ -1,4 +1,5 @@
 ﻿using H3_JokeMachine.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -30,14 +31,17 @@ namespace H3_JokeMachine.Controllers
             string jokeType = HttpContext.Request.Cookies["Favorite_Joke"];
             if (jokeType != null)
             {
-                for (int i = 0; i < Enum.GetNames(typeof(JokeType)).Length; i++)
+                foreach (string type in Enum.GetNames(typeof(JokeType)))
                 {
-
+                    if (jokeType == type)
+                    {
+                        return GetJoke(type, "");
+                    }
                 }
-                GetJoke("", "");
+                return BadRequest("Cookies have been altered");
             }
 
-            return SendJoke();
+            return SendJoke(jokeList.Jokes);
         }
 
 
@@ -93,19 +97,28 @@ namespace H3_JokeMachine.Controllers
                 }
             }
 
-            return SendJoke(true);
+            return SendJoke(jokeList.Jokes, true);
         }
 
-        private IActionResult SendJoke(bool setCookie = false)
+        [HttpGet]
+        [Route("Secret")]
+        [ApiKeyAuth(key = "Dankm3m3r")]
+        public IActionResult SendSecretJoke()
+        {
+            FilterUsedJokes();
+            return Ok(SendJoke(jokeList.SecretJokes, true));
+        }
+
+        private IActionResult SendJoke(List<Joke> jokesToChooseFrom, bool setCookie = false)
         {
             List<Joke> usedJokes = GetJokeListFromSession();
             if (usedJokes == null)
                 usedJokes = new List<Joke>();
 
             //Joke to return
-            if (jokeList.Jokes.Count > 0)
+            if (jokesToChooseFrom.Count > 0)
             {
-                Joke returnJoke = GetRandomJoke(jokeList.Jokes);
+                Joke returnJoke = GetRandomJoke(jokesToChooseFrom);
                 usedJokes.Add(returnJoke);
                 //Save the list back into session
                 HttpContext.Session.SetObjectAsJson("jokes", usedJokes);
