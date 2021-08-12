@@ -26,9 +26,14 @@ namespace H3_JokeMachine.Controllers
                 return BadRequest("Session has been tampered with");
             }
 
-            
-            if (HttpContext.Request.Cookies["Favorite_Joke"] != null)
+            //Need to sanitize
+            string jokeType = HttpContext.Request.Cookies["Favorite_Joke"];
+            if (jokeType != null)
             {
+                for (int i = 0; i < Enum.GetNames(typeof(JokeType)).Length; i++)
+                {
+
+                }
                 GetJoke("", "");
             }
 
