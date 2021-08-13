@@ -27,7 +27,7 @@ namespace H3_JokeMachine.Controllers
                 return BadRequest("Session has been tampered with");
             }
 
-            //Need to sanitize
+            //Validate the cookie by parsing it into an enum
             string jokeType = HttpContext.Request.Cookies["Favorite_Joke"];
             if (jokeType != null)
             {
@@ -35,7 +35,7 @@ namespace H3_JokeMachine.Controllers
                 {
                     if (jokeType == type)
                     {
-                        return GetJoke(type, "");
+                        return GetJoke(type, HttpContext.Request.Cookies["language"]);
                     }
                 }
                 return BadRequest("Cookies have been altered");
@@ -47,6 +47,7 @@ namespace H3_JokeMachine.Controllers
 
         [HttpGet]
         [Route("Type/{type}/{language?}")]
+        [ApiKeyAuth(key = "Dadk3y")]
         public IActionResult GetJoke(string type, [FromHeader] string language)
         {
             JokeType jokeType;
@@ -57,6 +58,9 @@ namespace H3_JokeMachine.Controllers
             {
                 jokeType = (JokeType)Enum.Parse(typeof(JokeType),
                     type.First().ToString().ToUpper() + type.Substring(1));
+
+                //If language is set and not null
+                //Capitilize first letter of language and parse it to Language enum
                 if (language != "" && language != null)
                     languageType = (Language)Enum.Parse(typeof(Language),
                         language.First().ToString().ToUpper() + language.Substring(1));
@@ -105,7 +109,15 @@ namespace H3_JokeMachine.Controllers
         [ApiKeyAuth(key = "Dankm3m3r")]
         public IActionResult SendSecretJoke()
         {
-            FilterUsedJokes();
+            try
+            {
+                FilterUsedJokes();
+            }
+            catch (Exception)
+            {
+                return BadRequest("Session has been tampered with");
+            }
+
             return Ok(SendJoke(jokeList.SecretJokes, true));
         }
 
@@ -132,7 +144,14 @@ namespace H3_JokeMachine.Controllers
                 return Ok(returnJoke.JokeText);
             }
             else
+            {
+                if (setCookie)
+                {
+                    return Ok("No jokes left of that kind, sorry");
+                }
                 return Ok("No jokes left!");
+            }
+
         }
 
         [HttpGet]

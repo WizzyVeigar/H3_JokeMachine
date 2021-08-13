@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace H3_JokeMachine
 {
+    //What can we put this attribute on?
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class ApiKeyAuthAttribute : Attribute, IAsyncActionFilter
     {
@@ -21,15 +22,16 @@ namespace H3_JokeMachine
         //    "Dankm3m3rk3y"
         //};
 
-
-        //Authorize the request before hitting the controller
+        //This is used to authorize the request before hitting the controller
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             //for (int i = 0; i < keys.Length; i++)
             //{
             if (context.HttpContext.Request.Headers.TryGetValue(key, out var potentialApiKey))
             {
+                //Dependency inject the config object
                 IConfiguration config = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+                //Get the potential keys from appsettings.json
                 string apiKey = config.GetValue<string>("ApiKeys:" + key);
 
                 if (apiKey != potentialApiKey)

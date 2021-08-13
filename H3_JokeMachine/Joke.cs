@@ -20,7 +20,6 @@ namespace H3_JokeMachine.Models
 
     public class Joke
     {
-
         public int JokeId { get; set; }
         public string JokeText { get; set; }
         public JokeType Type { get; set; }
