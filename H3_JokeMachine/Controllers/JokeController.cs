@@ -121,6 +121,20 @@ namespace H3_JokeMachine.Controllers
             return Ok(SendJoke(jokeList.SecretJokes, true));
         }
 
+        [HttpGet]
+        [Route("Types")]
+        public string GetJokeTypes()
+        {
+            string jokeTypes = "";
+
+            foreach (string jokeName in Enum.GetNames(typeof(JokeType)))
+            {
+                jokeTypes += jokeName + "\n";
+            }
+
+            return jokeTypes;
+        }
+
         private IActionResult SendJoke(List<Joke> jokesToChooseFrom, bool setCookie = false)
         {
             List<Joke> usedJokes = GetJokeListFromSession();
@@ -152,21 +166,7 @@ namespace H3_JokeMachine.Controllers
                 return Ok("No jokes left!");
             }
 
-        }
-
-        [HttpGet]
-        [Route("Types")]
-        public string GetJokeTypes()
-        {
-            string jokeTypes = "";
-
-            foreach (string jokeName in Enum.GetNames(typeof(JokeType)))
-            {
-                jokeTypes += jokeName + "\n";
-            }
-
-            return jokeTypes;
-        }
+        }      
 
 
         /// <summary>
